@@ -60,3 +60,6 @@ venv/
 
 meta.json
 to_publish.zip
+
+.DS_Store
+.venv

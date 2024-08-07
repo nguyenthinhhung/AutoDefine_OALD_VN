@@ -34,5 +34,9 @@
   "6. shortcuts": {
     " 1. PRIMARY_SHORTCUT": "ctrl+alt+e",
     "todo": "doesntwork"
+  },
+  "7. Vietnamese definition": {
+    " 1. VI_DEFINITION": true,
+    " 2. VI_DEFINITION_FIELD": 6
   }
 }

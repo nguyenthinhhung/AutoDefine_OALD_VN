@@ -564,3 +564,18 @@ class Word(object):
 [{
     'All matches': [{'name': 'content', 'id': 'content2_1', 'wordform': 'adjective'}, {'name': 'content', 'id': 'content2_2', 'wordform': 'verb'}, {'name': 'content', 'id': 'contentment', 'wordform': ''}, {'name': 'content farm', 'id': 'content-farm', 'wordform': 'noun'}, {'name': 'content mill', 'id': 'content-mill', 'wordform': 'noun'}, {'name': 'content word', 'id': 'content-word', 'wordform': 'noun'}, {'name': 'content marketing', 'id': 'content-marketing', 'wordform': 'noun'}, {'name': 'content provider', 'id': 'content-provider', 'wordform': 'noun'}, {'name': 'content management system', 'id': 'content-management-system', 'wordform': 'noun'}, {'name': 'content farms', 'id': 'content-farm', 'wordform': ''}, {'name': 'content mill', 'id': 'content-farm', 'wordform': ''}, {'name': 'content mills', 'id': 'content-mill', 'wordform': ''}, {'name': 'content farm', 'id': 'content-mill', 'wordform': ''}, {'name': 'content providers', 'id': 'content-provider', 'wordform': ''}, {'name': 'user-generated content', 'id': 'ugc', 'wordform': ''}, {'name': 'content management system', 'id': 'cms', 'wordform': ''}, {'name': 'to your heart’s content', 'id': 'content2_3#heart_idmg_50', 'wordform': ''}]}, {'Idioms': [{'name': 'to your heart’s content', 'id': 'content2_3#heart_idmg_50', 'wordform': ''}]}
  ]
+'''
+HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/118.0.0.0 Safari/537.36'
+    }
+try:
+    word = 'love'
+    Word.get(word, HEADERS, True)
+    info = Word.info()
+    print(info)
+    idioms = Word.idioms()
+    print(idioms)
+except WordNotFound:
+    print("Word not found in the dictionary.")
+'''

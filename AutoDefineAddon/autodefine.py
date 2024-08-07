@@ -23,6 +23,7 @@ import sys
 from contextlib import contextmanager
 import pathlib
 from .oxford import Word, WordNotFound
+from .laban import Word as LabanWord, WordNotFound as LabanWordNotFound
 from http import cookiejar
 from aqt.addcards import AddCards
 from aqt.editor import Editor
@@ -89,6 +90,10 @@ IMAGE_FIELD = get_config_value(section, " 4. IMAGE_FIELD", 5)
 
 section = '6. shortcuts'
 PRIMARY_SHORTCUT = get_config_value(section, " 1. PRIMARY_SHORTCUT", "ctrl+alt+e")
+
+section = '7. Vietnamese definition'
+VI_DEFINITION = get_config_value(section, " 1. VI_DEFINITION", True)
+VI_DEFINITION_FIELD = get_config_value(section, " 2. VI_DEFINITION_FIELD", 6)
 
 if CORPUS.lower() == 'british':
     CORPUS_TAGS_PRIORITIZED = ['BrE', 'nAmE']
@@ -230,7 +235,7 @@ def get_data(note, is_bulk):
         if CLEAN_HTML_IN_SOURCE_FIELD:
             insert_into_field(note, word, SOURCE_FIELD, overwrite=True)
 
-        words_info = get_words_info(word)
+        (words_info, idioms) = get_words_info(word)
 
         if len(words_info) == 0:
             raise AutoDefineError(f"Word not found in dictionary")
@@ -248,7 +253,7 @@ def get_data(note, is_bulk):
 
         if DEFINITION:
             insert_into_field(note, '', DEFINITION_FIELD, overwrite=True)
-            (definition_html, need_word_not_replaced_tag) = get_definition_html(words_info, verb_forms)
+            (definition_html, need_word_not_replaced_tag) = get_definition_html(words_info, verb_forms, idioms)
             insert_into_field(note, definition_html, DEFINITION_FIELD, overwrite=False)
 
             if need_word_not_replaced_tag:
@@ -257,6 +262,12 @@ def get_data(note, is_bulk):
             else:
                 if WORD_NOT_REPLACED_TAG_NAME in note.tags:
                     note.tags.remove(WORD_NOT_REPLACED_TAG_NAME)
+
+        if VI_DEFINITION:
+            word_instance = LabanWord(word)
+            word_info = word_instance.get_info()
+            definition_html = get_laban_definition_html(word_info, word)
+            insert_into_field(note, definition_html, VI_DEFINITION_FIELD, overwrite=True)
 
         if PHONETICS:
             phonetics = get_phonetics(words_info)
@@ -309,11 +320,13 @@ def get_verb_forms(words_info):
 
 def get_words_info(request_word):
     words_info = []
+    idioms = []
     word_to_search = request_word.replace(" ", "-").lower()
     try:
         Word.get(word_to_search, HEADERS, is_search=True)
 
         word_info = Word.info()
+        idioms = Word.idioms()
         words_info.append(word_info)
         word_name = word_info['name'].lower()
         other_results = word_info.get('other_results')
@@ -333,7 +346,7 @@ def get_words_info(request_word):
 
     except WordNotFound:
         pass
-    return words_info
+    return words_info, idioms
 
 
 def get_word_name(word_infos):
@@ -341,7 +354,7 @@ def get_word_name(word_infos):
         return word_info["name"]
 
 
-def get_definition_html(word_infos, verb_forms):
+def get_definition_html(word_infos, verb_forms, idioms):
     strings = []
 
     need_word_not_replaced_tag = False
@@ -359,7 +372,7 @@ def get_definition_html(word_infos, verb_forms):
         word = word_info["name"]
         wordform = word_info.get("wordform")
         if wordform is not None:
-            strings.append('<i>' + wordform + '</i>')
+            strings.append('<h3 class="wordform">' + wordform + '</h3>')
 
         if MAX_DEFINITIONS_COUNT_PER_PART_OF_SPEECH is not False:
             definitions = definitions[0:MAX_DEFINITIONS_COUNT_PER_PART_OF_SPEECH]
@@ -376,7 +389,7 @@ def get_definition_html(word_infos, verb_forms):
                 (_, description) = replace_word_in_sentence(words_to_replace_lists, maybe_description, False)
                 if previous_definition_without_examples:
                     strings.append('<br/>')
-                strings.append('<div><b>' + description + '</b></div>')
+                strings.append('<h4 class="description">' + description + '</h4>')
 
             examples = definition.get("examples", []) + definition.get("extra_example", [])
 
@@ -384,7 +397,7 @@ def get_definition_html(word_infos, verb_forms):
                 examples = examples[0:MAX_EXAMPLES_COUNT_PER_DEFINITION]
 
             if len(examples) > 0:
-                strings.append('<ul>')
+                strings.append('<ul class="examples">')
                 for example in examples:
                     example = example.replace('/', ' / ')
                     (replaced_anything, example_clean) = replace_word_in_sentence(words_to_replace_lists, example, True)
@@ -401,8 +414,79 @@ def get_definition_html(word_infos, verb_forms):
     if len(strings) > 0:
         del strings[-1]
 
+    if (len(idioms) > 0):
+        strings.append('<hr/>')
+        strings.append('<h3 class="idiom-title">Idioms<h3/>')
+
+    for idiom in idioms:
+        (_, idiom_name_clean) = replace_word_in_sentence(words_to_replace_lists, idiom['name'], False)
+        strings.append('<h4 class="idiom">' + idiom_name_clean + '</h4>')
+        for definition in idioms['definitions']:
+            (_, description_clean) = replace_word_in_sentence(words_to_replace_lists, definition['description'], False)
+            strings.append('<p class="idiom-description">' + description_clean + '</p>')
+            if (len(definition['examples']) > 0):
+                strings.append('<ul class="idiom-examples">')
+                for example in definition['examples']:
+                    (_, example_clean) = replace_word_in_sentence(words_to_replace_lists, example, True)
+                    strings.append('<li>' + example_clean + '</li>')
+                strings.append('</ul>')
+
     return BeautifulSoup(''.join(strings), 'html.parser').prettify(), need_word_not_replaced_tag
 
+def get_laban_word_info(request_word):
+    word_info = None
+    try:
+        word = LabanWord(request_word, HEADERS)
+
+        word_info = word.get_info()
+        return word_info
+
+    except LabanWordNotFound:
+        pass
+
+
+def get_laban_definition_html(word_info, word):
+    words_to_replace = [word]
+    words_to_replace_lists = set([tuple([unify(str.lower(word)) for word in tokinize(words)]) for words in words_to_replace])
+    strings = []
+
+    for definition in word_info["definitions"]:
+        word_type = definition["wordform"]
+        strings.append('<h3 class="wordform">' + word_type + '</h3>')
+        for def_item in definition["definitions"]:
+            description = def_item["description"]
+            (_, description_clean) = replace_word_in_sentence(words_to_replace_lists, description, False)
+            strings.append('<h4 class="description">' + description_clean + '</h4>')
+            strings.append('<ul class="examples">')
+            for example in def_item["examples"]:
+                example_text = example["example"]
+                translation = example["translation"]
+                (_, example_clean) = replace_word_in_sentence(words_to_replace_lists, example_text, True)
+                strings.append('<li>' + example_clean + ': <span>' + translation + '</span></li>')
+            strings.append('</ul>')
+        strings.append('<hr/>')
+
+    if len(strings) > 0:
+        del strings[-1]
+
+    if (len(word_info["idioms"]) > 0):
+        strings.append('<hr/>')
+        strings.append('<h3 class="idiom-title">Idioms<h3/>')
+
+    for idiom in word_info["idioms"]:
+        (_, idiom_name_clean) = replace_word_in_sentence(words_to_replace_lists, idiom['name'], False)
+        strings.append('<h4 class="idiom">' + idiom_name_clean + '</h4>')
+        for definition in idiom['definitions']:
+            (_, description_clean) = replace_word_in_sentence(words_to_replace_lists, definition['description'], False)
+            strings.append('<p class="idiom-description">' + description_clean + '</p>')
+            if (len(definition['examples']) > 0):
+                strings.append('<ul class="idiom-examples">')
+                for example in definition['examples']:
+                    (_, example_clean) = replace_word_in_sentence(words_to_replace_lists, example['example'], True)
+                    strings.append('<li>' + example_clean + ': <span>' + example['translation'] + '</span></li>')
+                strings.append('</ul>')
+
+    return BeautifulSoup(''.join(strings), 'html.parser').prettify()
 
 def get_phonetics(word_infos):
     phonetics_dict = {}
@@ -414,7 +498,7 @@ def get_phonetics(word_infos):
         fill_phonetics_dict_prioritized(phonetics_dict, pronunciations, wordform)
 
     if len(phonetics_dict) == 0:
-        return "<span class=\"do_not_show\">No phonetics found</span>"
+        return "<span class=\"hidden\">No phonetics found</span>"
     elif len(phonetics_dict) == 1:
         return '[' + next(iter(phonetics_dict)) + ']'
     else:
@@ -447,7 +531,7 @@ def get_audio(word_infos):
     if len(audio_dict) == 0:
         return "<span class=\"do_not_show\">No audio found</span>"
     elif len(audio_dict) == 1:
-        return f'[sound:{audio_dict[next(iter(audio_dict))]["audio_name"]}]'
+        return '[sound:' + audio_dict[next(iter(audio_dict))]["audio_name"] + ']'
     else:
         return "<br/>".join(["[sound:" + audio_dict[key]['audio_name'] + '] - ' +
                              ", ".join(audio_dict[key]['wordform']) for key in iter(audio_dict)])
@@ -595,75 +679,258 @@ def addCustomModel(col, name):
             'plainText': False,
             'collapsed': False,
             'excludeFromSearch': False
+        },
+        {
+            'name': 'VietnameseDefinition',
+            'ord': VI_DEFINITION_FIELD,
+            'sticky': False,
+            'rtl': False,
+            'font': 'Arial',
+            'size': 20,
+            'description': 'Leave empty, will be filled automatically',
+            'plainText': False,
+            'collapsed': False,
+            'excludeFromSearch': False
         }
     ]
 
     model['css'] = """
 .card {
-  font-family: arial;
-  font-size: 20px;
-  color: black;
-  background-color: white;
-  text-align: left;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 50px;
+    text-align: center;
+    color: black;
+    background: url('bg.jpg');
+}
+
+.mobile .card {
+    font-size: 30px;
 }
 
 .front {
-  text-align: center;
+    background-color: #18adab;
+    border-radius: 7px;
+    color: #fff;
+    position: relative;
+    left: 0;
+    padding: 19px;
 }
 
-.do_not_show {
-  display: none;
+.verb-forms {
+    font-size: 30px;
+    padding-top: 10px;
 }
 
-.img {
-  text-align: center;
+.mobile .verb-forms {
+    font-size: 16px;
 }
 
-img {
-  padding-left: 5px;
-  padding-right: 5px;
+.definitions {
+    font-size: 18px;
+    margin-bottom: 5px;
 }
 
-b {
-  color: black;
+.mobile .definitions {
+    font-size: 16px;
 }
 
-i {
-  color: grey;
+.back {
+    position: relative;
+    top: -3px;
+    background-color: #fff;
+    padding: 15px 30px;
+    border-radius: 0px 0px 10px 10px;
+    color: #3d3d3d;
+    font-size: 28px;
+    text-align: left;
 }
 
-.nightMode b {
-  color: #8ab4f8;
+.phonetics {
+    font-size: 18px;
+    padding: 10px;
 }
 
-.nightMode i {
-  color: silver;
+.mobile .phonetics {
+    font-size: 12px;
+    padding-bottom: 5px;
 }
 
-.nightMode a {
-  color: #8ab4f8;
+h3.wordform,
+h3.idiom-title {
+    padding: 5px 10px;
+    background-color: #f3f3f3;
+    font-size: 18px;
+}
+
+.mobile h3.wordform,
+.mobile h3.idiom-title {
+    font-size: 16px;
+}
+
+.back .examples,
+.back .idiom-examples {
+    color: #18adab;
+}
+
+.back .examples span,
+.back .idiom-examples span {
+    color: #3d3d3d;
+}
+
+.hidden {
+    display: none;
+}
+
+button {
+    padding: 0 6px 0 6px;
+    margin: 6px 8px 6px 8px;
+    min-width: 88px;
+    border-radius: 3px;
+    font-size: 16px;
+    text-align: center;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: none;
+    outline: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button[disabled] {
+    color: rgb(187, 187, 187);
+    background-color: rgba(230, 230, 229, 0.96);
+}
+
+button.blue {
+    color: #fff;
+    background-color: #18adab;
+}
+
+button.blue:not([disabled]):hover {
+    background-color: rgba(107, 103, 91, 0.96);
+    color: white;
+    border: none;
+    outline: none;
+}
+
+button.white {
+    color: #18adab;
+    background-color: #fff;
+    font-size: 16px;
+}
+
+button.white:not([disabled]):hover {
+    background-color: rgba(255, 255, 255, 0.96);
+    color: #18adab;
+    border: none;
+    outline: none;
+}
+
+.center {
+    text-align: center;
+}
+
+hr {
+    height: 2px;
+    font-size: 30px;
+    border: 0;
+    background: #72c8e1;
+}
+
+u {
+    text-decoration: none;
+    border-bottom: 1px dotted;
+}
+
+.front .replay-button svg {
+    width: 40px;
+    height: 40px;
+}
+.front .replay-button svg circle {
+    fill: white;
+    stroke: #18adab;
+}
+.front .replay-button svg path {
+    stroke: #18adab;
+    fill: #18adab;
+}
+
+.mobile .front .replay-button svg {
+    width: 30px;
+    height: 30px;
+}
+
+.back .replay-button svg {
+    width: 20px;
+    height: 20px;
+}
+.back .replay-button svg circle {
+    fill: #18adab;
+    stroke: white;
+}
+.back .replay-button svg path {
+    stroke: white;
+    fill: white;
+}
+
+.mobile .back .replay-button svg {
+    width: 20px;
+    height: 20px;
 }
 """
 
     # front
     t = getTemplate(mm, model, 'Normal')
-    t['qfmt'] = """<div class="front">{{Word}} {{Audio}} <br/> {{VerbForms}}</div>"""
+    t['qfmt'] = """
+<div class="front">
+    <div class="word">{{Word}} {{Audio}}</div>
+    <!-- {{#VerbForms}} -->
+    <div class="verb-forms">{{VerbForms}}</div>
+    <!-- {{/VerbForms}} -->
+</div>
+"""
     t['afmt'] = """
-<div class="front">{{Word}} {{Audio}} <br> {{VerbForms}}</div>
-<hr id="answer">
-<div class="img" id="img_div">{{Image}}</div>
-<hr id="image_hr">
-<div id="to_replace">
-{{DefinitionAndExamples}}
+<div class="front">
+    <div class="word">{{Word}} {{Audio}}</div>
+    <!-- {{#VerbForms}} -->
+    <div class="verb-forms">{{VerbForms}}</div>
+    <!-- {{/VerbForms}} -->
+    <div class="phonetics">{{Phonetics}}</div>
+</div>
+
+<div class="back">
+    <!-- {{#Image}} -->
+    <div class="img center" id="img_div">{{Image}}</div>
+    <hr id="image_hr" />
+    <!-- {{/Image}} -->
+    <div id="to_replace">
+        <div class="definitions">{{DefinitionAndExamples}}</div>
+        <!-- {{#VietnameseDefinition}} -->
+        <hr />
+        <div class="center">
+            <button id="show-vietnamese-definitions" class="blue">
+                Vietnamese
+            </button>
+        </div>
+        <div id="vietnamese-definitions" class="definitions hidden">
+            {{VietnameseDefinition}}
+        </div>
+        <!-- {{/VietnameseDefinition}} -->
+    </div>
 </div>
 <script>
-    document.getElementById('to_replace').innerHTML =
-    document.getElementById('to_replace').innerHTML.replace(/[#]([^#]+)[#]/ig, "<b>$1</b>");
-    
-    if (document.getElementById('img_div').innerHTML.toString().length == 0)
-    {
-        document.getElementById('image_hr').style.display = 'none';
-    }
+    document.getElementById('to_replace').innerHTML = document
+        .getElementById('to_replace')
+        .innerHTML.replace(/[#]([^#]+)[#]/gi, '<b>$1</b>')
+    document
+        .getElementById('show-vietnamese-definitions')
+        .addEventListener('click', () => {
+            const divEl = document.getElementById(
+                'vietnamese-definitions'
+            )
+            divEl.classList.toggle('hidden')
+        })
 </script>
 """
 
@@ -671,57 +938,95 @@ i {
     t = getTemplate(mm, model, "Reverse")
     t['qfmt'] = """
 <script>
-    var hintString = '{{Word}}';
-    var position = 0;
+    var hintString = '{{Word}}'
+    var position = 0
     function hint() {
-    position += 1;
-    if (hintString.length <= position) 
-    {
-        document.getElementById('hint_link').style.display='none'
-        document.getElementById('verb_forms').style.display='inline'; 
-        for (let el of document.querySelectorAll('.word')) el.style.display = 'inline';
-        for (let el of document.querySelectorAll('.replacement')) el.style.display = 'none';
-    }
-    return hintString.substring(0, position);
+        position += 1
+        if (hintString.length <= position) {
+            document.getElementById('hint_link').style.display =
+                'none'
+            document.getElementById('verb_forms').style.display =
+                'inline'
+            for (let el of document.querySelectorAll('.word'))
+                el.style.display = 'inline'
+            for (let el of document.querySelectorAll(
+                '.replacement'
+            ))
+                el.style.display = 'none'
+        }
+        return hintString.substring(0, position)
     }
 </script>
 
 <div class="front">
-    {{type:Word}}
-    <br id="hint_br">
-    <a id="hint_link" class=hint href="#"onclick="document.getElementById('hint_div').style.display='inline-block';document.getElementById('hint_div').innerHTML=hint();return false;">Show hint</a>
-    <div id="hint_div" class=hint style="display: none"></div><br><span id="verb_forms" style="display: none"> {{VerbForms}}</span>
+    {{type:Word}}<span class="word">{{Audio}}</span>
+    <div class="center">
+        <button
+            id="hint_link"
+            class="hint white"
+            onclick="document.getElementById('hint_div').style.display='block';document.getElementById('hint_div').innerHTML=hint();return false;"
+        >
+            Show hint
+        </button>
+    </div>
+    <div id="hint_div" class="hint" style="display: none"></div>
+    <div id="verb_forms" class="verb-forms" style="display: none">
+        {{VerbForms}}</div
+    >
 </div>
 
-<hr id="answer">
-<div class="img" id="img_div">{{Image}}</div>
-<hr id="image_hr">
-<div id="to_replace">
-{{DefinitionAndExamples}}
-</div>
+<div class="back">
+    <hr id="answer" />
+    <!-- {{#Image}} -->
+    <div class="img center" id="img_div">{{Image}}</div>
+    <hr id="image_hr" />
+    <div id="to_replace">
+        <!-- {{/Image}} -->
+        <div class="definitions">{{DefinitionAndExamples}}</div>
+        <!-- {{#VietnameseDefinition}} -->
+        <hr />
+        <div class="center">
+            <button id="show-vietnamese-definitions" class="blue">
+                Vietnamese
+            </button>
+        </div>
+        <div id="vietnamese-definitions" class="definitions hidden">
+            {{VietnameseDefinition}}
+        </div>
+        <!-- {{/VietnameseDefinition}} -->
+    </div>
+    <script>
+        document.getElementById('to_replace').innerHTML = document
+            .getElementById('to_replace')
+            .innerHTML.replace(
+                /[#]([^#]+)[#]/gi,
+                "<span class='word'><b>$1</b></span><span class='replacement'>____</span>"
+            )
 
-<script>
-    document.getElementById('to_replace').innerHTML =
-     document.getElementById('to_replace').innerHTML
-     .replace(/[#]([^#]+)[#]/ig, "<span class='word'><b>$1</b></span><span class='replacement'>____</span>");
-     
-    for (let el of document.querySelectorAll('.word')) el.style.display = 'none';
-    for (let el of document.querySelectorAll('.replacement')) el.style.display = 'inline';
-    
-    if (document.getElementById('img_div').innerHTML.toString().length == 0)
-    {
-        document.getElementById('image_hr').style.display = 'none';
-    }
-</script>
+        for (let el of document.querySelectorAll('.word'))
+            el.style.display = 'none'
+        for (let el of document.querySelectorAll('.replacement'))
+            el.style.display = 'inline'
+        document
+            .getElementById('show-vietnamese-definitions')
+            .addEventListener('click', () => {
+                const divEl = document.getElementById(
+                    'vietnamese-definitions'
+                )
+                divEl.classList.toggle('hidden')
+            })
+    </script>
+</div>
 """
     t['afmt'] = """
-<div class="front">{{Audio}}</div>
-    {{FrontSide}}
+{{FrontSide}}
 <script>
-    document.getElementById('hint_link').style.display='none';
-    document.getElementById('verb_forms').style.display='inline';
-    for (let el of document.querySelectorAll('.word')) el.style.display = 'inline';
-    for (let el of document.querySelectorAll('.replacement')) el.style.display = 'none';
+    document.getElementById('hint_link').style.display = 'none'
+    document.getElementById('verb_forms').style.display = 'block'
+    for (let el of document.querySelectorAll('.word'))
+        el.style.display = 'inline'
+    for (let el of document.querySelectorAll('.replacement'))
+        el.style.display = 'none'
 </script>
 """
 
