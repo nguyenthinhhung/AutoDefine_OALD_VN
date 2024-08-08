@@ -421,7 +421,7 @@ def get_definition_html(word_infos, verb_forms, idioms):
     for idiom in idioms:
         (_, idiom_name_clean) = replace_word_in_sentence(words_to_replace_lists, idiom['name'], False)
         strings.append('<h4 class="idiom">' + idiom_name_clean + '</h4>')
-        for definition in idioms['definitions']:
+        for definition in idiom['definitions']:
             (_, description_clean) = replace_word_in_sentence(words_to_replace_lists, definition['description'], False)
             strings.append('<p class="idiom-description">' + description_clean + '</p>')
             if (len(definition['examples']) > 0):

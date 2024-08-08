@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Anki Card Preview</title>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+        />
+        <style>
+            body,
+            html {
+                margin: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                font-family: Arial, sans-serif;
+                background-color: #f4f4f4;
+                padding: 20px 0;
+            }
+
+            .tabs {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+
+            .tabs button {
+                background-color: #fff;
+                border: 1px solid #ccc;
+                padding: 10px 20px;
+                cursor: pointer;
+                margin: 0 5px;
+                border-radius: 5px;
+                transition: background-color 0.3s;
+            }
+
+            .tabs button:hover {
+                background-color: #ddd;
+            }
+
+            .tabs button.active {
+                background-color: #ddd;
+                border-bottom: 2px solid #007bff;
+            }
+
+            .switch-button {
+                display: flex;
+                align-items: center;
+                background-color: #007bff;
+                color: #fff;
+                border: none;
+                padding: 10px 20px;
+                cursor: pointer;
+                border-radius: 5px;
+                transition: background-color 0.3s;
+            }
+
+            .switch-button:hover {
+                background-color: #0056b3;
+            }
+
+            .switch-button i {
+                margin-right: 10px;
+            }
+
+            .card {
+                display: none;
+                padding-top: 20px;
+                width: 700px;
+            }
+
+            .mobile .card {
+                width: 400px;
+            }
+
+            .card.active {
+                display: block;
+            }
+
+            /** 
+                ========= CARD STYLE ========= 
+            */
+
+            .card {
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 50px;
+                text-align: center;
+                color: black;
+                background: url('bg.jpg');
+            }
+
+            .mobile .card {
+                font-size: 30px;
+            }
+
+            .front {
+                background-color: #18adab;
+                border-radius: 7px;
+                color: #fff;
+                position: relative;
+                left: 0;
+                padding: 19px;
+            }
+
+            .verb-forms {
+                font-size: 30px;
+                padding-top: 10px;
+            }
+
+            .mobile .verb-forms {
+                font-size: 16px;
+            }
+
+            .definitions {
+                font-size: 18px;
+                margin-bottom: 5px;
+            }
+
+            .mobile .definitions {
+                font-size: 16px;
+            }
+
+            .back {
+                position: relative;
+                top: -3px;
+                background-color: #fff;
+                padding: 15px 30px;
+                border-radius: 0px 0px 10px 10px;
+                color: #3d3d3d;
+                font-size: 28px;
+                text-align: left;
+            }
+
+            .phonetics {
+                font-size: 18px;
+                padding: 10px;
+            }
+
+            .mobile .phonetics {
+                font-size: 12px;
+                padding-bottom: 5px;
+            }
+
+            h3.wordform,
+            h3.idiom-title {
+                padding: 5px 10px;
+                background-color: #f3f3f3;
+                font-size: 18px;
+            }
+
+            .mobile h3.wordform,
+            .mobile h3.idiom-title {
+                font-size: 16px;
+            }
+
+            .back .examples,
+            .back .idiom-examples {
+                color: #18adab;
+            }
+
+            .back .examples span,
+            .back .idiom-examples span {
+                color: #3d3d3d;
+            }
+
+            .hidden {
+                display: none;
+            }
+
+            button {
+                padding: 0 6px 0 6px;
+                margin: 6px 8px 6px 8px;
+                min-width: 88px;
+                border-radius: 3px;
+                font-size: 16px;
+                text-align: center;
+                text-transform: uppercase;
+                text-decoration: none;
+                border: none;
+                outline: none;
+                padding: 10px 20px;
+                cursor: pointer;
+                transition: background-color 0.3s;
+            }
+
+            button[disabled] {
+                color: rgb(187, 187, 187);
+                background-color: rgba(230, 230, 229, 0.96);
+            }
+
+            button.blue {
+                color: #fff;
+                background-color: #18adab;
+            }
+
+            button.blue:not([disabled]):hover {
+                background-color: rgba(107, 103, 91, 0.96);
+                color: white;
+                border: none;
+                outline: none;
+            }
+
+            button.white {
+                color: #18adab;
+                background-color: #fff;
+                font-size: 16px;
+            }
+
+            button.white:not([disabled]):hover {
+                background-color: rgba(255, 255, 255, 0.96);
+                color: #18adab;
+                border: none;
+                outline: none;
+            }
+
+            .center {
+                text-align: center;
+            }
+
+            hr {
+                height: 2px;
+                font-size: 30px;
+                border: 0;
+                background: #72c8e1;
+            }
+
+            u {
+                text-decoration: none;
+                border-bottom: 1px dotted;
+            }
+
+            .front .replay-button svg {
+                width: 40px;
+                height: 40px;
+            }
+            .front .replay-button svg circle {
+                fill: white;
+                stroke: #18adab;
+            }
+            .front .replay-button svg path {
+                stroke: #18adab;
+                fill: #18adab;
+            }
+
+            .mobile .front .replay-button svg {
+                width: 30px;
+                height: 30px;
+            }
+
+            .back .replay-button svg {
+                width: 20px;
+                height: 20px;
+            }
+            .back .replay-button svg circle {
+                fill: #18adab;
+                stroke: white;
+            }
+            .back .replay-button svg path {
+                stroke: white;
+                fill: white;
+            }
+
+            .mobile .back .replay-button svg {
+                width: 20px;
+                height: 20px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <button class="switch-button">
+            <i class="fas fa-mobile-alt"></i>Switch to Mobile View
+        </button>
+
+        <h2>Normal Card</h2>
+        <div class="tabs">
+            <button
+                class="tab-button active"
+                data-panel="normal-card"
+                data-tab="front"
+            >
+                Front
+            </button>
+            <button class="tab-button" data-panel="normal-card" data-tab="back">
+                Back
+            </button>
+        </div>
+
+        <div class="card active normal-card" id="front">
+            <!-- ========= FRONT TEMPLATE ========= -->
+
+            <div class="front">
+                <div class="word">{{Word}} {{Audio}}</div>
+                <!-- {{#VerbForms}} -->
+                <div class="verb-forms">{{VerbForms}}</div>
+                <!-- {{/VerbForms}} -->
+            </div>
+        </div>
+
+        <div class="card normal-card" id="back">
+            <!-- ========= BACK TEMPLATE ========= -->
+
+            <div class="front">
+                <div class="word">{{Word}} {{Audio}}</div>
+                <!-- {{#VerbForms}} -->
+                <div class="verb-forms">{{VerbForms}}</div>
+                <!-- {{/VerbForms}} -->
+                <div class="phonetics">{{Phonetics}}</div>
+            </div>
+
+            <div class="back">
+                <!-- {{#Image}} -->
+                <div class="img" id="img_div">{{Image}}</div>
+                <hr id="image_hr" />
+                <!-- {{/Image}} -->
+                <div id="to_replace">
+                    <div class="definitions">{{DefinitionAndExamples}}</div>
+                    <!-- {{#VietnameseDefinition}} -->
+                    <hr />
+                    <div class="center">
+                        <button id="show-vietnamese-definitions" class="blue">
+                            Vietnamese
+                        </button>
+                    </div>
+                    <div id="vietnamese-definitions" class="definitions hidden">
+                        {{VietnameseDefinition}}
+                    </div>
+                    <!-- {{/VietnameseDefinition}} -->
+                </div>
+            </div>
+            <script>
+                document.getElementById('to_replace').innerHTML = document
+                    .getElementById('to_replace')
+                    .innerHTML.replace(/[#]([^#]+)[#]/gi, '<b>$1</b>')
+                document
+                    .getElementById('show-vietnamese-definitions')
+                    .addEventListener('click', () => {
+                        const divEl = document.getElementById(
+                            'vietnamese-definitions'
+                        )
+                        divEl.classList.toggle('hidden')
+                    })
+            </script>
+        </div>
+
+        <h2>Reverse Card</h2>
+        <div class="tabs">
+            <button
+                class="tab-button active"
+                data-panel="reverse-card"
+                data-tab="reverse-front"
+            >
+                Front
+            </button>
+            <button
+                class="tab-button"
+                data-panel="reverse-card"
+                data-tab="reverse-back"
+            >
+                Back
+            </button>
+        </div>
+
+        <div class="card reverse-card active" id="reverse-front">
+            <!-- ========= [REVERSE] FRONT TEMPLATE ========= -->
+
+            <script>
+                var hintString = '{{Word}}'
+                var position = 0
+                function hint() {
+                    position += 1
+                    if (hintString.length <= position) {
+                        document.getElementById('hint_link').style.display =
+                            'none'
+                        document.getElementById('verb_forms').style.display =
+                            'inline'
+                        for (let el of document.querySelectorAll('.word'))
+                            el.style.display = 'inline'
+                        for (let el of document.querySelectorAll(
+                            '.replacement'
+                        ))
+                            el.style.display = 'none'
+                    }
+                    return hintString.substring(0, position)
+                }
+            </script>
+
+            <div class="front">
+                {{type:Word}}<span class="word">{{Audio}}</span>
+                <div class="center">
+                    <button
+                        id="hint_link"
+                        class="hint white"
+                        onclick="document.getElementById('hint_div').style.display='block';document.getElementById('hint_div').innerHTML=hint();return false;"
+                    >
+                        Show hint
+                    </button>
+                </div>
+                <div id="hint_div" class="hint" style="display: none"></div>
+                <div id="verb_forms" class="verb-forms" style="display: none">
+                    {{VerbForms}}
+                </div>
+            </div>
+
+            <div class="back">
+                <hr id="answer" />
+                <!-- {{#Image}} -->
+                <div class="img" id="img_div">{{Image}}</div>
+                <hr id="image_hr" />
+                <div id="to_replace">
+                    <!-- {{/Image}} -->
+                    <div class="definitions">{{DefinitionAndExamples}}</div>
+                    <!-- {{#VietnameseDefinition}} -->
+                    <hr />
+                    <div class="center">
+                        <button id="show-vietnamese-definitions" class="blue">
+                            Vietnamese
+                        </button>
+                    </div>
+                    <div id="vietnamese-definitions" class="definitions hidden">
+                        {{VietnameseDefinition}}
+                    </div>
+                    <!-- {{/VietnameseDefinition}} -->
+                </div>
+                <script>
+                    document.getElementById('to_replace').innerHTML = document
+                        .getElementById('to_replace')
+                        .innerHTML.replace(
+                            /[#]([^#]+)[#]/gi,
+                            "<span class='word'><b>$1</b></span><span class='replacement'>____</span>"
+                        )
+
+                    for (let el of document.querySelectorAll('.word'))
+                        el.style.display = 'none'
+                    for (let el of document.querySelectorAll('.replacement'))
+                        el.style.display = 'inline'
+                    document
+                        .getElementById('show-vietnamese-definitions')
+                        .addEventListener('click', () => {
+                            const divEl = document.getElementById(
+                                'vietnamese-definitions'
+                            )
+                            divEl.classList.toggle('hidden')
+                        })
+                </script>
+            </div>
+        </div>
+        <div class="card reverse-card" id="reverse-back">
+            <!-- ========= [REVERSE] BACK TEMPLATE ========= -->
+            {{FrontSide}}
+            <script>
+                document.getElementById('hint_link').style.display = 'none'
+                document.getElementById('verb_forms').style.display = 'block'
+                for (let el of document.querySelectorAll('.word'))
+                    el.style.display = 'inline'
+                for (let el of document.querySelectorAll('.replacement'))
+                    el.style.display = 'none'
+            </script>
+        </div>
+
+        <script>
+            const tabButtons = document.querySelectorAll('.tab-button')
+            const switchButton = document.querySelector('.switch-button')
+
+            function saveState() {
+                const isMobileView = document.body.classList.contains('mobile')
+                const normalActiveTab = document.querySelector(
+                    '.normal-card.card.active'
+                ).id
+                const reverseActiveTab = document.querySelector(
+                    '.reverse-card.card.active'
+                ).id
+
+                localStorage.setItem('isMobileView', isMobileView)
+                localStorage.setItem('normalActiveTab', normalActiveTab)
+                localStorage.setItem('reverseActiveTab', reverseActiveTab)
+            }
+
+            function loadState() {
+                const isMobileView =
+                    localStorage.getItem('isMobileView') === 'true'
+                const normalActiveTab = localStorage.getItem('normalActiveTab')
+                const reverseActiveTab =
+                    localStorage.getItem('reverseActiveTab')
+
+                if (isMobileView) {
+                    document.body.classList.add('mobile')
+                    switchButton.innerHTML =
+                        '<i class="fas fa-mobile-alt"></i> Switch to Mobile View'
+                } else {
+                    switchButton.innerHTML =
+                        '<i class="fas fa-desktop"></i> Switch to Desktop View'
+                }
+
+                if (normalActiveTab) {
+                    document
+                        .querySelectorAll('.normal-card.card')
+                        .forEach((card) => card.classList.remove('active'))
+                    document
+                        .getElementById(normalActiveTab)
+                        .classList.add('active')
+
+                    document
+                        .querySelectorAll("button[data-panel='normal-card']")
+                        .forEach((btn) => btn.classList.remove('active'))
+                    document
+                        .querySelector(`button[data-tab='${normalActiveTab}']`)
+                        .classList.add('active')
+                }
+
+                if (reverseActiveTab) {
+                    document
+                        .querySelectorAll('.reverse-card.card')
+                        .forEach((card) => card.classList.remove('active'))
+                    document
+                        .getElementById(reverseActiveTab)
+                        .classList.add('active')
+
+                    document
+                        .querySelectorAll("button[data-panel='reverse-card']")
+                        .forEach((btn) => btn.classList.remove('active'))
+                    document
+                        .querySelector(`button[data-tab='${reverseActiveTab}']`)
+                        .classList.add('active')
+                }
+            }
+
+            tabButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    const panel = button.getAttribute('data-panel')
+                    const tab = button.getAttribute('data-tab')
+
+                    Array.from(button.parentElement.children).forEach((btn) =>
+                        btn.classList.remove('active')
+                    )
+                    button.classList.add('active')
+
+                    document.querySelectorAll('.' + panel).forEach((card) => {
+                        card.id === tab
+                            ? card.classList.add('active')
+                            : card.classList.remove('active')
+                    })
+                    saveState()
+                })
+            })
+
+            switchButton.addEventListener('click', () => {
+                document.body.classList.toggle('mobile')
+                if (document.body.classList.contains('mobile')) {
+                    switchButton.innerHTML =
+                        '<i class="fas fa-desktop"></i> Switch to Desktop View'
+                } else {
+                    switchButton.innerHTML =
+                        '<i class="fas fa-mobile-alt"></i> Switch to Mobile View'
+                }
+                saveState()
+            })
+
+            loadState()
+
+            const definitions = document.querySelectorAll('.definitions')
+            definitions.forEach((def) => {
+                def.innerHTML = `
+        <h3 class="wordform">Danh từ</h3>
+        <h4 class="description">tình yêu, tình thương</h4>
+        <ul class="examples">
+          <li>a mother's love for her children: <span>tình thương của mẹ đối với con cái</span></li>
+        </ul>
+        <h4 class="description">người yêu; người đáng yêu, vật đáng yêu</h4>
+        <ul class="examples">
+          <li>take care , my love: <span>cẩn thận đấy, em yêu</span></li>
+        </ul>
+        <hr/>
+        <h3 class="wordform">Động từ</h3>
+        <h4 class="description">yêu, yêu thương, yêu mến</h4>
+        <ul class="examples">
+          <li>love one another: <span>yêu thương nhau</span></li>
+          <li>love one's parents: <span>yêu cha mẹ</span></li>
+        </ul>
+        <hr/>
+        <h3 class="idiom-title">Idioms<h3/>
+        <h4 class="idiom">not for love or money</h4>
+        <p class="idiom-description">bằng bất cứ cách nào cũng được</p>
+        <ul class="idiom-examples">
+          <li>we couldn't find a hotel room for love and money: <span>chúng tôi không sao tìm được một phòng khách sạn</span></li>
+        </ul>
+      `
+            })
+            document.getElementById('to_replace').innerHTML = document
+                .getElementById('to_replace')
+                .innerHTML.replace(/[#]([^#]+)[#]/gi, '<b>$1</b>')
+        </script>
+    </body>
+</html>
