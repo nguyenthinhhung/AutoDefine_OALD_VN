@@ -777,6 +777,11 @@ h3.idiom-title {
     color: #3d3d3d;
 }
 
+.back .examples span b,
+.back .idiom-examples span b {
+    color: #18adab;
+}
+
 .hidden {
     display: none;
 }
@@ -980,8 +985,8 @@ u {
     <!-- {{#Image}} -->
     <div class="img center" id="img_div">{{Image}}</div>
     <hr id="image_hr" />
+    <!-- {{/Image}} -->
     <div id="to_replace">
-        <!-- {{/Image}} -->
         <div class="definitions">{{DefinitionAndExamples}}</div>
         <!-- {{#VietnameseDefinition}} -->
         <hr />

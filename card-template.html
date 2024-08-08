@@ -89,7 +89,7 @@
                 font-size: 50px;
                 text-align: center;
                 color: black;
-                background: url('bg.jpg');
+                background: url("bg.jpg");
             }
 
             .mobile .card {
@@ -164,6 +164,11 @@
             .back .examples span,
             .back .idiom-examples span {
                 color: #3d3d3d;
+            }
+
+            .back .examples span b,
+            .back .idiom-examples span b {
+                color: #18adab;
             }
 
             .hidden {
@@ -332,17 +337,17 @@
                 </div>
             </div>
             <script>
-                document.getElementById('to_replace').innerHTML = document
-                    .getElementById('to_replace')
-                    .innerHTML.replace(/[#]([^#]+)[#]/gi, '<b>$1</b>')
+                document.getElementById("to_replace").innerHTML = document
+                    .getElementById("to_replace")
+                    .innerHTML.replace(/[#]([^#]+)[#]/gi, "<b>$1</b>");
                 document
-                    .getElementById('show-vietnamese-definitions')
-                    .addEventListener('click', () => {
+                    .getElementById("show-vietnamese-definitions")
+                    .addEventListener("click", () => {
                         const divEl = document.getElementById(
-                            'vietnamese-definitions'
-                        )
-                        divEl.classList.toggle('hidden')
-                    })
+                            "vietnamese-definitions"
+                        );
+                        divEl.classList.toggle("hidden");
+                    });
             </script>
         </div>
 
@@ -368,23 +373,23 @@
             <!-- ========= [REVERSE] FRONT TEMPLATE ========= -->
 
             <script>
-                var hintString = '{{Word}}'
-                var position = 0
+                var hintString = "{{Word}}";
+                var position = 0;
                 function hint() {
-                    position += 1
+                    position += 1;
                     if (hintString.length <= position) {
-                        document.getElementById('hint_link').style.display =
-                            'none'
-                        document.getElementById('verb_forms').style.display =
-                            'inline'
-                        for (let el of document.querySelectorAll('.word'))
-                            el.style.display = 'inline'
+                        document.getElementById("hint_link").style.display =
+                            "none";
+                        document.getElementById("verb_forms").style.display =
+                            "inline";
+                        for (let el of document.querySelectorAll(".word"))
+                            el.style.display = "inline";
                         for (let el of document.querySelectorAll(
-                            '.replacement'
+                            ".replacement"
                         ))
-                            el.style.display = 'none'
+                            el.style.display = "none";
                     }
-                    return hintString.substring(0, position)
+                    return hintString.substring(0, position);
                 }
             </script>
 
@@ -426,25 +431,25 @@
                     <!-- {{/VietnameseDefinition}} -->
                 </div>
                 <script>
-                    document.getElementById('to_replace').innerHTML = document
-                        .getElementById('to_replace')
+                    document.getElementById("to_replace").innerHTML = document
+                        .getElementById("to_replace")
                         .innerHTML.replace(
                             /[#]([^#]+)[#]/gi,
                             "<span class='word'><b>$1</b></span><span class='replacement'>____</span>"
-                        )
+                        );
 
-                    for (let el of document.querySelectorAll('.word'))
-                        el.style.display = 'none'
-                    for (let el of document.querySelectorAll('.replacement'))
-                        el.style.display = 'inline'
+                    for (let el of document.querySelectorAll(".word"))
+                        el.style.display = "none";
+                    for (let el of document.querySelectorAll(".replacement"))
+                        el.style.display = "inline";
                     document
-                        .getElementById('show-vietnamese-definitions')
-                        .addEventListener('click', () => {
+                        .getElementById("show-vietnamese-definitions")
+                        .addEventListener("click", () => {
                             const divEl = document.getElementById(
-                                'vietnamese-definitions'
-                            )
-                            divEl.classList.toggle('hidden')
-                        })
+                                "vietnamese-definitions"
+                            );
+                            divEl.classList.toggle("hidden");
+                        });
                 </script>
             </div>
         </div>
@@ -452,116 +457,116 @@
             <!-- ========= [REVERSE] BACK TEMPLATE ========= -->
             {{FrontSide}}
             <script>
-                document.getElementById('hint_link').style.display = 'none'
-                document.getElementById('verb_forms').style.display = 'block'
-                for (let el of document.querySelectorAll('.word'))
-                    el.style.display = 'inline'
-                for (let el of document.querySelectorAll('.replacement'))
-                    el.style.display = 'none'
+                document.getElementById("hint_link").style.display = "none";
+                document.getElementById("verb_forms").style.display = "block";
+                for (let el of document.querySelectorAll(".word"))
+                    el.style.display = "inline";
+                for (let el of document.querySelectorAll(".replacement"))
+                    el.style.display = "none";
             </script>
         </div>
 
         <script>
-            const tabButtons = document.querySelectorAll('.tab-button')
-            const switchButton = document.querySelector('.switch-button')
+            const tabButtons = document.querySelectorAll(".tab-button");
+            const switchButton = document.querySelector(".switch-button");
 
             function saveState() {
-                const isMobileView = document.body.classList.contains('mobile')
+                const isMobileView = document.body.classList.contains("mobile");
                 const normalActiveTab = document.querySelector(
-                    '.normal-card.card.active'
-                ).id
+                    ".normal-card.card.active"
+                ).id;
                 const reverseActiveTab = document.querySelector(
-                    '.reverse-card.card.active'
-                ).id
+                    ".reverse-card.card.active"
+                ).id;
 
-                localStorage.setItem('isMobileView', isMobileView)
-                localStorage.setItem('normalActiveTab', normalActiveTab)
-                localStorage.setItem('reverseActiveTab', reverseActiveTab)
+                localStorage.setItem("isMobileView", isMobileView);
+                localStorage.setItem("normalActiveTab", normalActiveTab);
+                localStorage.setItem("reverseActiveTab", reverseActiveTab);
             }
 
             function loadState() {
                 const isMobileView =
-                    localStorage.getItem('isMobileView') === 'true'
-                const normalActiveTab = localStorage.getItem('normalActiveTab')
+                    localStorage.getItem("isMobileView") === "true";
+                const normalActiveTab = localStorage.getItem("normalActiveTab");
                 const reverseActiveTab =
-                    localStorage.getItem('reverseActiveTab')
+                    localStorage.getItem("reverseActiveTab");
 
                 if (isMobileView) {
-                    document.body.classList.add('mobile')
+                    document.body.classList.add("mobile");
                     switchButton.innerHTML =
-                        '<i class="fas fa-mobile-alt"></i> Switch to Mobile View'
+                        '<i class="fas fa-mobile-alt"></i> Switch to Mobile View';
                 } else {
                     switchButton.innerHTML =
-                        '<i class="fas fa-desktop"></i> Switch to Desktop View'
+                        '<i class="fas fa-desktop"></i> Switch to Desktop View';
                 }
 
                 if (normalActiveTab) {
                     document
-                        .querySelectorAll('.normal-card.card')
-                        .forEach((card) => card.classList.remove('active'))
+                        .querySelectorAll(".normal-card.card")
+                        .forEach((card) => card.classList.remove("active"));
                     document
                         .getElementById(normalActiveTab)
-                        .classList.add('active')
+                        .classList.add("active");
 
                     document
                         .querySelectorAll("button[data-panel='normal-card']")
-                        .forEach((btn) => btn.classList.remove('active'))
+                        .forEach((btn) => btn.classList.remove("active"));
                     document
                         .querySelector(`button[data-tab='${normalActiveTab}']`)
-                        .classList.add('active')
+                        .classList.add("active");
                 }
 
                 if (reverseActiveTab) {
                     document
-                        .querySelectorAll('.reverse-card.card')
-                        .forEach((card) => card.classList.remove('active'))
+                        .querySelectorAll(".reverse-card.card")
+                        .forEach((card) => card.classList.remove("active"));
                     document
                         .getElementById(reverseActiveTab)
-                        .classList.add('active')
+                        .classList.add("active");
 
                     document
                         .querySelectorAll("button[data-panel='reverse-card']")
-                        .forEach((btn) => btn.classList.remove('active'))
+                        .forEach((btn) => btn.classList.remove("active"));
                     document
                         .querySelector(`button[data-tab='${reverseActiveTab}']`)
-                        .classList.add('active')
+                        .classList.add("active");
                 }
             }
 
             tabButtons.forEach((button) => {
-                button.addEventListener('click', () => {
-                    const panel = button.getAttribute('data-panel')
-                    const tab = button.getAttribute('data-tab')
+                button.addEventListener("click", () => {
+                    const panel = button.getAttribute("data-panel");
+                    const tab = button.getAttribute("data-tab");
 
                     Array.from(button.parentElement.children).forEach((btn) =>
-                        btn.classList.remove('active')
-                    )
-                    button.classList.add('active')
+                        btn.classList.remove("active")
+                    );
+                    button.classList.add("active");
 
-                    document.querySelectorAll('.' + panel).forEach((card) => {
+                    document.querySelectorAll("." + panel).forEach((card) => {
                         card.id === tab
-                            ? card.classList.add('active')
-                            : card.classList.remove('active')
-                    })
-                    saveState()
-                })
-            })
+                            ? card.classList.add("active")
+                            : card.classList.remove("active");
+                    });
+                    saveState();
+                });
+            });
 
-            switchButton.addEventListener('click', () => {
-                document.body.classList.toggle('mobile')
-                if (document.body.classList.contains('mobile')) {
+            switchButton.addEventListener("click", () => {
+                document.body.classList.toggle("mobile");
+                if (document.body.classList.contains("mobile")) {
                     switchButton.innerHTML =
-                        '<i class="fas fa-desktop"></i> Switch to Desktop View'
+                        '<i class="fas fa-desktop"></i> Switch to Desktop View';
                 } else {
                     switchButton.innerHTML =
-                        '<i class="fas fa-mobile-alt"></i> Switch to Mobile View'
+                        '<i class="fas fa-mobile-alt"></i> Switch to Mobile View';
                 }
-                saveState()
-            })
+                saveState();
+            });
 
-            loadState()
+            loadState();
 
-            const definitions = document.querySelectorAll('.definitions')
+            const definitions = document.querySelectorAll(".definitions");
             definitions.forEach((def) => {
                 def.innerHTML = `
         <h3 class="wordform">Danh từ</h3>
@@ -587,11 +592,11 @@
         <ul class="idiom-examples">
           <li>we couldn't find a hotel room for love and money: <span>chúng tôi không sao tìm được một phòng khách sạn</span></li>
         </ul>
-      `
-            })
-            document.getElementById('to_replace').innerHTML = document
-                .getElementById('to_replace')
-                .innerHTML.replace(/[#]([^#]+)[#]/gi, '<b>$1</b>')
+      `;
+            });
+            document.getElementById("to_replace").innerHTML = document
+                .getElementById("to_replace")
+                .innerHTML.replace(/[#]([^#]+)[#]/gi, "<b>$1</b>");
         </script>
     </body>
 </html>
